@@ -37,6 +37,8 @@ class FeedViewController: UIViewController {
     
     override func viewDidLoad() {
         webView = WKWebView(frame: self.view.bounds)
+        webView.navigationDelegate = self
+        webView.uiDelegate = self
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -164,21 +166,22 @@ extension FeedViewController : CaptureSessionControllerDelegate {
     
 }
 
-extension FeedViewController: UIWebViewDelegate {
-    func webView(_ webView: UIWebView, shouldStartLoadWith request: URLRequest, navigationType: UIWebViewNavigationType) -> Bool {
-        print("webview: should start \(request.url?.absoluteString)")
-        return true
+extension FeedViewController: WKNavigationDelegate {
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        print("webview: fail \(webView.url?.absoluteString)")
+        if (webView.url?.absoluteString.contains("https://thestreet.ouroath.com/people/rohitm@oath.com"))! {
+            print("webview: fail final")
+            let info = webView.evaluateJavaScript("document.getElementsByClassName('j2-sidebar')", completionHandler: { (data, error) in
+                print("final data")
+                print("data: \(data)")
+                print("error: \(error)")
+                
+            })
+            print("info: \(info)")
+        }
     }
+}
+
+extension FeedViewController: WKUIDelegate {
     
-    public func webViewDidStartLoad(_ webView: UIWebView) {
-        print("webview: did start")
-    }
-    
-    public func webViewDidFinishLoad(_ webView: UIWebView) {
-        print("webview: did finish")
-    }
-    
-    public func webView(_ webView: UIWebView, didFailLoadWithError error: Error) {
-        print("webview: fail \(error.localizedDescription)")
-    }
 }
