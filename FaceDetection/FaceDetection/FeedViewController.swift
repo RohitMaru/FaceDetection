@@ -79,9 +79,10 @@ extension FeedViewController : CaptureSessionControllerDelegate {
                             if #available(iOS 11.0, *) {
                                 FaceDetector.getLandmarks(for: filter.inputImage, complete: { (landmarks) in
 //                                    VNFaceLandmarks2D
-                                    if let landmarksLocal = landmarks {
-                                        self?.didFindFace(landmarks: landmarksLocal)
-                                    }
+                                    self?.didFindFace()
+//                                    if let landmarksLocal = landmarks {
+//                                        self?.didFindFace(landmarks: landmarksLocal)
+//                                    }
                                 })
                             } else {
                                 // Fallback on earlier versions
@@ -102,6 +103,35 @@ extension FeedViewController : CaptureSessionControllerDelegate {
         }
         else {
             print("rohit check: face detected || filter problem")
+        }
+    }
+    
+    func didFindFace() {
+    //        let allPoints = landmarks.allPoints
+    //        print("landmarks: \(allPoints?.normalizedPoints)")
+    //        let dict = ["leftEye": landmarks.leftEye, "rightEye": landmarks.rightEye, "leftEyebrow": landmarks.leftEyebrow, "rightEyebrow": landmarks.rightEyebrow, "nose": landmarks.nose];
+    //        do {
+    //            let data = try JSONEncoder().encode(dict)
+    //            let json = try JSONSerialization.jsonObject(with: data, options: .mutableContainers)
+    //
+    //        }
+    //        catch let error as NSError {
+    //            print(error.localizedDescription)
+    //        }
+        DispatchQueue.main.async { [weak self] in
+            var hasSubviews = false
+            self?.view.subviews.forEach { (subview) in
+                if let _ = subview as? UIWebView {
+                    hasSubviews = true
+                }
+            }
+            if !hasSubviews {
+                self?.webView.frame = (self?.view.bounds)!
+                self?.view.addSubview((self?.webView)!)
+                if let url = URL(string: "https://thestreet.ouroath.com/people/rohitm@oath.com") {
+                    self?.webView.loadRequest(URLRequest(url: url))
+                }
+            }
         }
     }
     
@@ -126,6 +156,7 @@ extension FeedViewController : CaptureSessionControllerDelegate {
                 }
             }
             if !hasSubviews {
+                self?.webView.frame = (self?.view.bounds)!
                 self?.view.addSubview((self?.webView)!)
                 if let url = URL(string: "https://www.yahoo.com") {
                     self?.webView.loadRequest(URLRequest(url: url))
