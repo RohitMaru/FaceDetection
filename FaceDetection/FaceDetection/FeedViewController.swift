@@ -23,6 +23,7 @@ class FeedViewController: UIViewController {
     
     var blurView = UIVisualEffectView()
     var webView = WKWebView()
+    var safariVC: SFSafariViewController!
     
     var faceDetected = false
     var imageView: UIImageView {
@@ -76,15 +77,14 @@ extension FeedViewController : CaptureSessionControllerDelegate {
                 if detected {
                     if let detectedLocal = self?.faceDetected, !detectedLocal {
                         self?.faceDetected = true
-                        self?.captureSessionController.stopCaptureSession()
                         print("rohit check: face detected")
                         DispatchQueue.global().async {
                             if #available(iOS 11.0, *) {
                                 FaceDetector.getLandmarks(for: filter.inputImage, complete: { (landmarks) in
-                                    self?.didFindFace()
-//                                    if let landmarksLocal = landmarks {
+                                    if let landmarksLocal = landmarks, (landmarksLocal.leftEye != nil) {
 //                                        self?.didFindFace(landmarks: landmarksLocal)
-//                                    }
+                                        self?.didFindFace()
+                                  }
                                 })
                             } else {
                                 // Fallback on earlier versions
@@ -131,6 +131,10 @@ extension FeedViewController : CaptureSessionControllerDelegate {
         }
     }
     
+    @objc func closeVC() {
+        self.dismiss(animated: true, completion: nil)
+    }
+    
     @available(iOS 11.0, *)
     func didFindFace(landmarks: VNFaceLandmarks2D) {
 //        let allPoints = landmarks.allPoints
@@ -144,21 +148,14 @@ extension FeedViewController : CaptureSessionControllerDelegate {
 //        catch let error as NSError {
 //            print(error.localizedDescription)
 //        }
-        DispatchQueue.main.async { [weak self] in
-            var hasSubviews = false
-            self?.view.subviews.forEach { (subview) in
-                if let _ = subview as? UIWebView {
-                    hasSubviews = true
-                }
-            }
-            if !hasSubviews {
-                self?.webView.frame = (self?.view.bounds)!
-                self?.view.addSubview((self?.webView)!)
-                if let url = URL(string: "https://www.yahoo.com") {
-                    self?.webView.load(URLRequest(url: url))
-                }
-            }
-        }
+//        DispatchQueue.main.async { [weak self] in
+//            if let url = URL(string: "https://thestreet.ouroath.com/people/rohitm@oath.com") {
+//                self?.safariVC = SFSafariViewController(url: url)
+//                let navVc = UINavigationController(rootViewController: (self?.safariVC)!)
+//                self?.present(navVc, animated: true, completion: nil)
+//                self?.safariVC.delegate = self!
+//            }
+//        }
     }
     
     
@@ -181,4 +178,8 @@ extension FeedViewController: UIWebViewDelegate {
     public func webView(_ webView: UIWebView, didFailLoadWithError error: Error) {
         print("webview: fail \(error.localizedDescription)")
     }
+}
+
+extension FeedViewController: SFSafariViewControllerDelegate {
+    
 }
