@@ -11,6 +11,8 @@ import CoreImage
 import AVFoundation
 import Vision
 import Foundation
+import SafariServices
+import WebKit
 
 class FeedViewController: UIViewController {
     lazy var captureSessionController: CaptureSessionController = {
@@ -20,7 +22,7 @@ class FeedViewController: UIViewController {
     }()
     
     var blurView = UIVisualEffectView()
-    var webView = UIWebView()
+    var webView = WKWebView()
     
     var faceDetected = false
     var imageView: UIImageView {
@@ -34,7 +36,7 @@ class FeedViewController: UIViewController {
     }
     
     override func viewDidLoad() {
-        webView = UIWebView(frame: self.view.bounds)
+        webView = WKWebView(frame: self.view.bounds)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -72,13 +74,13 @@ extension FeedViewController : CaptureSessionControllerDelegate {
         if let filter = FaceObscurationFilter(CMSampleBuffer: sampleBuffer) {
             filter.detectFace(complete: { [weak self] (detected, detectedImage) in
                 if detected {
-                    if let detected = self?.faceDetected, !detected {
+                    if let detectedLocal = self?.faceDetected, !detectedLocal {
                         self?.faceDetected = true
+                        self?.captureSessionController.stopCaptureSession()
                         print("rohit check: face detected")
                         DispatchQueue.global().async {
                             if #available(iOS 11.0, *) {
                                 FaceDetector.getLandmarks(for: filter.inputImage, complete: { (landmarks) in
-//                                    VNFaceLandmarks2D
                                     self?.didFindFace()
 //                                    if let landmarksLocal = landmarks {
 //                                        self?.didFindFace(landmarks: landmarksLocal)
@@ -107,17 +109,6 @@ extension FeedViewController : CaptureSessionControllerDelegate {
     }
     
     func didFindFace() {
-    //        let allPoints = landmarks.allPoints
-    //        print("landmarks: \(allPoints?.normalizedPoints)")
-    //        let dict = ["leftEye": landmarks.leftEye, "rightEye": landmarks.rightEye, "leftEyebrow": landmarks.leftEyebrow, "rightEyebrow": landmarks.rightEyebrow, "nose": landmarks.nose];
-    //        do {
-    //            let data = try JSONEncoder().encode(dict)
-    //            let json = try JSONSerialization.jsonObject(with: data, options: .mutableContainers)
-    //
-    //        }
-    //        catch let error as NSError {
-    //            print(error.localizedDescription)
-    //        }
         DispatchQueue.main.async { [weak self] in
             var hasSubviews = false
             self?.view.subviews.forEach { (subview) in
@@ -127,9 +118,14 @@ extension FeedViewController : CaptureSessionControllerDelegate {
             }
             if !hasSubviews {
                 self?.webView.frame = (self?.view.bounds)!
-                self?.view.addSubview((self?.webView)!)
+                let rootVC = UIViewController()
+                rootVC.view.frame = (self?.view.bounds)!
+                rootVC.view.addSubview((self?.webView)!)
+                
+                let vc = UINavigationController(rootViewController: rootVC)
+                self?.present(vc, animated: true, completion: nil)
                 if let url = URL(string: "https://thestreet.ouroath.com/people/rohitm@oath.com") {
-                    self?.webView.loadRequest(URLRequest(url: url))
+                    self?.webView.load(URLRequest(url: url))
                 }
             }
         }
@@ -159,11 +155,30 @@ extension FeedViewController : CaptureSessionControllerDelegate {
                 self?.webView.frame = (self?.view.bounds)!
                 self?.view.addSubview((self?.webView)!)
                 if let url = URL(string: "https://www.yahoo.com") {
-                    self?.webView.loadRequest(URLRequest(url: url))
+                    self?.webView.load(URLRequest(url: url))
                 }
             }
         }
     }
     
     
+}
+
+extension FeedViewController: UIWebViewDelegate {
+    func webView(_ webView: UIWebView, shouldStartLoadWith request: URLRequest, navigationType: UIWebViewNavigationType) -> Bool {
+        print("webview: should start \(request.url?.absoluteString)")
+        return true
+    }
+    
+    public func webViewDidStartLoad(_ webView: UIWebView) {
+        print("webview: did start")
+    }
+    
+    public func webViewDidFinishLoad(_ webView: UIWebView) {
+        print("webview: did finish")
+    }
+    
+    public func webView(_ webView: UIWebView, didFailLoadWithError error: Error) {
+        print("webview: fail \(error.localizedDescription)")
+    }
 }
